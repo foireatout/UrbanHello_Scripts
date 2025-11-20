@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ===== CONFIGURATION =====
-USERNAME="ACCOUNT_USER_MAIL"
+USERNAME="ACCOUNT_MAIL"
 PASSWORD="ACCOUNT_PASSWORD"
 TOKEN_FILE="/var/www/html/plugins/script/data/urbanhello/.urbanhello_token"
 USER_OBJECT_ID_FILE="/var/www/html/plugins/script/data/urbanhello/.urbanhello_user_object_id"
@@ -82,7 +82,7 @@ get_temperature() {
     if [[ ! -f "$TOKEN_FILE" ]]; then login; fi
     token=$(cat "$TOKEN_FILE")
     temp=$(python3 /var/www/html/plugins/script/data/urbanhello/urbanhello_api.py get_temperature "$token" "$1")
-    echo "$temp" | jq -r
+1    echo "$temp" | jq -r
 }
 
 get_all_info() {
@@ -119,11 +119,6 @@ set_alarm() {
     echo "$result" | jq
 }
 
-
-# ============================
-#     NOUVELLES COMMANDES FACE
-# ============================
-
 get_face() {
     if [[ ! -f "$TOKEN_FILE" ]]; then login; fi
     token=$(cat "$TOKEN_FILE")
@@ -131,11 +126,54 @@ get_face() {
     echo "$face"
 }
 
+get_facenum() {
+    if [[ ! -f "$TOKEN_FILE" ]]; then login; fi
+    token=$(cat "$TOKEN_FILE")
+    facepr=$(python3 /var/www/html/plugins/script/data/urbanhello/urbanhello_api.py get_face "$token" "$1")
+
+    if [[ $facepr == "awakeFace" ]]; then echo 1; fi
+    if [[ $facepr == "sleepyFace" ]]; then echo 2; fi
+    if [[ $facepr == "semiAwakeFace" ]]; then echo 3; fi
+    if [[ $facepr == "blankFace" ]]; then echo 4; fi
+}
+
 set_face() {
     if [[ ! -f "$TOKEN_FILE" ]]; then login; fi
     token=$(cat "$TOKEN_FILE")
     result=$(python3 /var/www/html/plugins/script/data/urbanhello/urbanhello_api.py set_face "$token" "$1" "$2")
     echo "$result" | jq
+}
+
+# ============================
+#     MUSIQUE
+# ============================
+
+play_music() {
+    if [[ ! -f "$TOKEN_FILE" ]]; then login; fi
+    token=$(cat "$TOKEN_FILE")
+    result=$(python3 /var/www/html/plugins/script/data/urbanhello/urbanhello_api.py play_music "$token" "$1" "$2")
+    echo "$result" | jq
+}
+
+stop_music() {
+    if [[ ! -f "$TOKEN_FILE" ]]; then login; fi
+    token=$(cat "$TOKEN_FILE")
+    result=$(python3 /var/www/html/plugins/script/data/urbanhello/urbanhello_api.py stop_music "$token" "$1")
+    echo "$result" | jq
+}
+
+get_music_path() {
+    if [[ ! -f "$TOKEN_FILE" ]]; then login; fi
+    token=$(cat "$TOKEN_FILE")
+    result=$(python3 /var/www/html/plugins/script/data/urbanhello/urbanhello_api.py music_path "$token" "$1")
+    echo "$result"
+}
+
+get_music_mode() {
+    if [[ ! -f "$TOKEN_FILE" ]]; then login; fi
+    token=$(cat "$TOKEN_FILE")
+    result=$(python3 /var/www/html/plugins/script/data/urbanhello/urbanhello_api.py music_mode "$token" "$1")
+    echo "$result"
 }
 
 # ============================
@@ -172,6 +210,9 @@ case $1 in
     set_alarm)
         set_alarm "$2" "$3" "$4" "$5"
         ;;
+    facenum)
+       get_facenum "$2"
+    ;;
     face)
         if [[ -n "$3" ]]; then
             set_face "$2" "$3"
@@ -179,8 +220,21 @@ case $1 in
             get_face "$2"
         fi
         ;;
+    play_music)
+        play_music "$2" "$3"
+        ;;
+    stop_music)
+        stop_music "$2"
+        ;;
+    music_path)
+        get_music_path "$2"
+        ;;
+    music_mode)
+        get_music_mode "$2"
+        ;;
     *)
         echo "Usage: $0 [...]"
         exit 1
         ;;
 esac
+

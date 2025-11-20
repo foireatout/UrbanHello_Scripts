@@ -39,28 +39,22 @@ def list_alarms(session_token, remi_object_id):
     return alarms
 
 def modify_alarm(session_token, remi_object_id, index, field, value):
-    # Charger la liste complète
     remi_info = get_remi_info(session_token, remi_object_id)
     alarms = remi_info.get("alarms", [])
 
-    # Vérifier index valide
     if index < 0 or index >= len(alarms):
         return {"error": f"Invalid alarm index {index}"}
 
-    # Convertir valeurs booléennes
     if value in ["true", "True", "1"]:
         value = True
     if value in ["false", "False", "0"]:
         value = False
 
-    # Convertir valeurs numériques
     if value.isdigit():
         value = int(value)
 
-    # Modifier l’alarme ciblée
     alarms[index][field] = value
 
-    # Sauvegarder sur l’API
     url = f"{API_BASE_URL}/classes/Remi/{remi_object_id}"
     headers = {
         "X-Parse-Application-Id": PARSE_APP_ID,
@@ -72,7 +66,6 @@ def modify_alarm(session_token, remi_object_id, index, field, value):
     response = requests.put(url, headers=headers, json=data)
     response.raise_for_status()
     return response.json()
-
 
 def get_remi_info(session_token, remi_object_id, attribute=None):
     url = f"{API_BASE_URL}/classes/Remi/{remi_object_id}"
@@ -101,11 +94,6 @@ def set_remi_luminosity(session_token, remi_object_id, level):
     return response.json()
 
 def set_face_expression(session_token, remi_object_id, expression):
-    """
-    Ancienne méthode qui ajoutait un champ 'expression' dans le champ 'face' du Remi.
-    On la conserve pour compatibilité, mais la nouvelle fonction recommandée
-    est set_face_by_name qui remplace le pointer 'face' par un nouveau pointer.
-    """
     url = f"{API_BASE_URL}/classes/Remi/{remi_object_id}"
     headers = {
         "X-Parse-Application-Id": PARSE_APP_ID,
@@ -119,7 +107,6 @@ def set_face_expression(session_token, remi_object_id, expression):
     response = requests.put(url, headers=headers, json=data)
     response.raise_for_status()
     return response.json()
-
 
 def get_alarms(session_token, remi_object_id):
     remi_info = get_remi_info(session_token, remi_object_id)
@@ -140,23 +127,12 @@ FACE_MAP = {
     "semiAwakeFace": "9faiiPGBVv"
 }
 
-# Inverse map pour lookup par objectId -> name
 FACE_MAP_INV = {v: k for k, v in FACE_MAP.items()}
 
 def get_face_name_from_id(face_object_id):
-    """
-    Retourne le nom lisible du face à partir de son objectId.
-    """
     return FACE_MAP_INV.get(face_object_id, "UnknownFace")
 
 def get_current_face(session_token, remi_object_id):
-    """
-    Lit l'objet Remi, récupère le champ 'face' et retourne le nom du face appliqué.
-    Prend en charge :
-      - face est un Pointer (typique) -> utiliser objectId
-      - face est un Object contenant 'expression' (cas observé) -> utiliser cette valeur
-      - sinon renvoyer 'NoFace' ou 'UnknownFace'
-    """
     remi_info = get_remi_info(session_token, remi_object_id)
     face = remi_info.get("face", None)
 
@@ -174,7 +150,6 @@ def get_current_face(session_token, remi_object_id):
                 return FACE_MAP_INV[expression]
             if expression in FACE_MAP:
                 return expression
-       
         if "objectId" in face:
             fid = face.get("objectId")
             return get_face_name_from_id(fid)
@@ -182,10 +157,6 @@ def get_current_face(session_token, remi_object_id):
     return "UnknownFace"
 
 def set_face_by_name(session_token, remi_object_id, face_name):
-    """
-    Remplace le pointer 'face' de l'objet Remi pour pointer vers l'objet Face
-    correspondant au nom fourni.
-    """
     if face_name not in FACE_MAP:
         return {"error": f"Unknown face '{face_name}'"}
 
@@ -198,7 +169,6 @@ def set_face_by_name(session_token, remi_object_id, face_name):
         "X-Parse-Session-Token": session_token
     }
 
-    # Construire le pointer correctement
     pointer = {
         "__type": "Pointer",
         "className": "Face",
@@ -209,6 +179,39 @@ def set_face_by_name(session_token, remi_object_id, face_name):
     response.raise_for_status()
     return response.json()
 
+# ============================
+#  MUSIQUE (NOUVELLES FONCTIONS)
+# ============================
+
+def play_music(session_token, remi_object_id, filename):
+    url = f"{API_BASE_URL}/classes/Remi/{remi_object_id}"
+    headers = {
+        "X-Parse-Application-Id": PARSE_APP_ID,
+        "Content-Type": "application/json",
+        "X-Parse-Session-Token": session_token
+    }
+    data = {"musicPath": f"{filename}:play"}
+    response = requests.put(url, headers=headers, json=data)
+    response.raise_for_status()
+    return response.json()
+
+def stop_music(session_token, remi_object_id):
+    url = f"{API_BASE_URL}/classes/Remi/{remi_object_id}"
+    headers = {
+        "X-Parse-Application-Id": PARSE_APP_ID,
+        "Content-Type": "application/json",
+        "X-Parse-Session-Token": session_token
+    }
+    data = {"musicPath": "pause:0"}
+    response = requests.put(url, headers=headers, json=data)
+    response.raise_for_status()
+    return response.json()
+
+def get_music_path(session_token, remi_object_id):
+    return get_remi_info(session_token, remi_object_id, "musicPath")
+
+def get_music_mode(session_token, remi_object_id):
+    return get_remi_info(session_token, remi_object_id, "musicMode")
 
 # ============================
 #  DISPATCHER ARGUMENTS
@@ -261,7 +264,6 @@ if __name__ == "__main__":
         temp = get_temperature(session_token, remi_object_id)
         print(f"Température: {temp}")
 
-    # === AJOUTS FACE ===
     elif len(sys.argv) > 1 and sys.argv[1] == "get_face":
         session_token = sys.argv[2]
         remi_object_id = sys.argv[3]
@@ -288,6 +290,28 @@ if __name__ == "__main__":
         value = sys.argv[6]
         print(json.dumps(modify_alarm(session_token, remi_id, index, field, value)))
 
+    # ===== MUSIQUE (DISPATCHER) =====
+    elif sys.argv[1] == "play_music":
+        session_token = sys.argv[2]
+        remi_id = sys.argv[3]
+        filename = sys.argv[4]
+        print(json.dumps(play_music(session_token, remi_id, filename)))
+
+    elif sys.argv[1] == "stop_music":
+        session_token = sys.argv[2]
+        remi_id = sys.argv[3]
+        print(json.dumps(stop_music(session_token, remi_id)))
+
+    elif sys.argv[1] == "music_path":
+        session_token = sys.argv[2]
+        remi_id = sys.argv[3]
+        print(get_music_path(session_token, remi_id))
+
+    elif sys.argv[1] == "music_mode":
+        session_token = sys.argv[2]
+        remi_id = sys.argv[3]
+        print(get_music_mode(session_token, remi_id))
 
     else:
         print("Usage: urbanhello_api.py [...]")
+

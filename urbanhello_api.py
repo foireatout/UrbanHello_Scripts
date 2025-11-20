@@ -93,6 +93,19 @@ def set_remi_luminosity(session_token, remi_object_id, level):
     response.raise_for_status()
     return response.json()
 
+def set_remi_volume(session_token, remi_object_id, level):
+    url = f"{API_BASE_URL}/classes/Remi/{remi_object_id}"
+    headers = {
+        "X-Parse-Application-Id": PARSE_APP_ID,
+        "Content-Type": "application/json",
+        "X-Parse-Session-Token": session_token
+    }
+    data = {"volume": level}
+    response = requests.put(url, headers=headers, json=data)
+    response.raise_for_status()
+    return response.json()
+
+
 def set_face_expression(session_token, remi_object_id, expression):
     url = f"{API_BASE_URL}/classes/Remi/{remi_object_id}"
     headers = {
@@ -243,6 +256,13 @@ if __name__ == "__main__":
         remi_object_id = sys.argv[3]
         level = int(sys.argv[4])
         result = set_remi_luminosity(session_token, remi_object_id, level)
+        print(json.dumps(result))
+
+    elif len(sys.argv) > 1 and sys.argv[1] == "set_volume":
+        session_token = sys.argv[2]
+        remi_object_id = sys.argv[3]
+        level = int(sys.argv[4])
+        result = set_remi_volume(session_token, remi_object_id, level)
         print(json.dumps(result))
 
     elif len(sys.argv) > 1 and sys.argv[1] == "set_face_expression":

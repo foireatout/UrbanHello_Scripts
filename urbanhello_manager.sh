@@ -64,6 +64,13 @@ set_luminosity() {
     echo "$result" | jq
 }
 
+set_volume() {
+    if [[ ! -f "$TOKEN_FILE" ]]; then login; fi
+    token=$(cat "$TOKEN_FILE")
+    result=$(python3 /var/www/html/plugins/script/data/urbanhello/urbanhello_api.py set_volume "$token" "$1" "$2")
+    echo "$result" | jq
+}
+
 set_face_expression() {
     if [[ ! -f "$TOKEN_FILE" ]]; then login; fi
     token=$(cat "$TOKEN_FILE")
@@ -144,10 +151,6 @@ set_face() {
     echo "$result" | jq
 }
 
-# ============================
-#     MUSIQUE
-# ============================
-
 play_music() {
     if [[ ! -f "$TOKEN_FILE" ]]; then login; fi
     token=$(cat "$TOKEN_FILE")
@@ -195,6 +198,9 @@ case $1 in
     set_luminosity)
         set_luminosity "$2" "$3"
         ;;
+    set_volume)
+        set_volume "$2" "$3"
+        ;;
     set_face_expression)
         set_face_expression "$2" "$3"
         ;;
@@ -237,4 +243,3 @@ case $1 in
         exit 1
         ;;
 esac
-

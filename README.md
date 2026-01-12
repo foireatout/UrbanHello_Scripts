@@ -59,7 +59,7 @@ Définit le volume entre **0 et 100**.
 Ajuste la luminosité de 0 à 100.
 
 ### `set_nightluminosity REMI_ID niveau`
-Ajuste la luminosité du visage la nuit de 0 à 100 (par palier de 10).
+Ajuste la luminosité du visage la nuit de 0 à 10  (!)
 
 ---
 

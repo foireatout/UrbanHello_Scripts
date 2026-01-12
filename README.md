@@ -58,6 +58,9 @@ Définit le volume entre **0 et 100**.
 ### `set_luminosity REMI_ID niveau`
 Ajuste la luminosité de 0 à 100.
 
+### `set_nightluminosity REMI_ID niveau`
+Ajuste la luminosité du visage la nuit de 0 à 100 (par palier de 10).
+
 ---
 
 ## Visage du REMI
@@ -74,19 +77,6 @@ Retourne un numéro correspondant au visage actuel :
 - 2 = sleepyFace  
 - 3 = semiAwakeFace  
 - 4 = blankFace  
-
----
-
-## Alarmes
-
-### `get_alarms REMI_ID`
-Liste les alarmes du réveil.
-
-### `set_alarm REMI_ID index field value`
-Modifie une alarme existante.  
-Exemples :
-- changer l’heure → `set_alarm X 0 hour 7`
-- activer/désactiver → `set_alarm X 0 enabled true`
 
 ---
 

@@ -34,39 +34,6 @@ def get_user_info(session_token, user_object_id, attribute=None):
         return user_info.get(attribute, f"Attribute '{attribute}' not found")
     return user_info
 
-def list_alarms(session_token, remi_object_id):
-    alarms = get_alarms(session_token, remi_object_id)
-    return alarms
-
-def modify_alarm(session_token, remi_object_id, index, field, value):
-    remi_info = get_remi_info(session_token, remi_object_id)
-    alarms = remi_info.get("alarms", [])
-
-    if index < 0 or index >= len(alarms):
-        return {"error": f"Invalid alarm index {index}"}
-
-    if value in ["true", "True", "1"]:
-        value = True
-    if value in ["false", "False", "0"]:
-        value = False
-
-    if value.isdigit():
-        value = int(value)
-
-    alarms[index][field] = value
-
-    url = f"{API_BASE_URL}/classes/Remi/{remi_object_id}"
-    headers = {
-        "X-Parse-Application-Id": PARSE_APP_ID,
-        "Content-Type": "application/json",
-        "X-Parse-Session-Token": session_token
-    }
-    data = {"alarms": alarms}
-
-    response = requests.put(url, headers=headers, json=data)
-    response.raise_for_status()
-    return response.json()
-
 def get_remi_info(session_token, remi_object_id, attribute=None):
     url = f"{API_BASE_URL}/classes/Remi/{remi_object_id}"
     headers = {
@@ -121,17 +88,9 @@ def set_face_expression(session_token, remi_object_id, expression):
     response.raise_for_status()
     return response.json()
 
-def get_alarms(session_token, remi_object_id):
-    remi_info = get_remi_info(session_token, remi_object_id)
-    return remi_info.get("alarms", [])
-
 def get_temperature(session_token, remi_object_id):
     remi_info = get_remi_info(session_token, remi_object_id, "temp")
     return remi_info
-
-# ============================
-#  NOUVELLES FONCTIONS FACE
-# ============================
 
 FACE_MAP = {
     "sleepyFace": "rnAltoFwYC",
@@ -203,10 +162,6 @@ def set_remi_nightluminosity(session_token, remi_object_id, level):
     response.raise_for_status()
     return response.json()
 
-# ============================
-#  MUSIQUE (NOUVELLES FONCTIONS)
-# ============================
-
 def play_music(session_token, remi_object_id, filename):
     url = f"{API_BASE_URL}/classes/Remi/{remi_object_id}"
     headers = {
@@ -237,11 +192,7 @@ def get_music_path(session_token, remi_object_id):
 def get_music_mode(session_token, remi_object_id):
     return get_remi_info(session_token, remi_object_id, "musicMode")
 
-
-
-# ============================
 #  DISPATCHER ARGUMENTS
-# ============================
 
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "login":
@@ -292,12 +243,6 @@ if __name__ == "__main__":
         result = set_face_expression(session_token, remi_object_id, expression)
         print(json.dumps(result))
 
-    elif len(sys.argv) > 1 and sys.argv[1] == "get_alarms":
-        session_token = sys.argv[2]
-        remi_object_id = sys.argv[3]
-        alarms = get_alarms(session_token, remi_object_id)
-        print(json.dumps(alarms))
-
     elif len(sys.argv) > 1 and sys.argv[1] == "get_temperature":
         session_token = sys.argv[2]
         remi_object_id = sys.argv[3]
@@ -317,20 +262,6 @@ if __name__ == "__main__":
         result = set_face_by_name(session_token, remi_object_id, face_name)
         print(json.dumps(result))
 
-    elif sys.argv[1] == "alarms":
-        session_token = sys.argv[2]
-        remi_id = sys.argv[3]
-        print(json.dumps(list_alarms(session_token, remi_id)))
-
-    elif sys.argv[1] == "set_alarm":
-        session_token = sys.argv[2]
-        remi_id = sys.argv[3]
-        index = int(sys.argv[4])
-        field = sys.argv[5]
-        value = sys.argv[6]
-        print(json.dumps(modify_alarm(session_token, remi_id, index, field, value)))
-
-    # ===== MUSIQUE (DISPATCHER) =====
     elif sys.argv[1] == "play_music":
         session_token = sys.argv[2]
         remi_id = sys.argv[3]

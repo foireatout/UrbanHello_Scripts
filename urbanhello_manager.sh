@@ -64,6 +64,13 @@ set_luminosity() {
     echo "$result" | jq
 }
 
+set_nightluminosity() {
+    if [[ ! -f "$TOKEN_FILE" ]]; then login; fi
+    token=$(cat "$TOKEN_FILE")
+    result=$(python3 /var/www/html/plugins/script/data/urbanhello/urbanhello_api.py set_nightluminosity "$token" "$1" "$2")
+    echo "$result" | jq
+}
+
 set_volume() {
     if [[ ! -f "$TOKEN_FILE" ]]; then login; fi
     token=$(cat "$TOKEN_FILE")
@@ -78,18 +85,11 @@ set_face_expression() {
     echo "$result" | jq
 }
 
-get_alarms() {
-    if [[ ! -f "$TOKEN_FILE" ]]; then login; fi
-    token=$(cat "$TOKEN_FILE")
-    alarms=$(python3 /var/www/html/plugins/script/data/urbanhello/urbanhello_api.py get_alarms "$token" "$1")
-    echo "$alarms" | jq
-}
-
 get_temperature() {
     if [[ ! -f "$TOKEN_FILE" ]]; then login; fi
     token=$(cat "$TOKEN_FILE")
     temp=$(python3 /var/www/html/plugins/script/data/urbanhello/urbanhello_api.py get_temperature "$token" "$1")
-1    echo "$temp" | jq -r
+    echo "$temp" | jq -r
 }
 
 get_all_info() {
@@ -110,20 +110,6 @@ get_all_info() {
         echo "Alarmes pour Réveil ID: $remi_id"
         echo "$alarms" | jq
     done
-}
-
-list_alarms() {
-    if [[ ! -f "$TOKEN_FILE" ]]; then login; fi
-    token=$(cat "$TOKEN_FILE")
-    alarms=$(python3 /var/www/html/plugins/script/data/urbanhello/urbanhello_api.py alarms "$token" "$1")
-    echo "$alarms" | jq
-}
-
-set_alarm() {
-    if [[ ! -f "$TOKEN_FILE" ]]; then login; fi
-    token=$(cat "$TOKEN_FILE")
-    result=$(python3 /var/www/html/plugins/script/data/urbanhello/urbanhello_api.py set_alarm "$token" "$1" "$2" "$3" "$4")
-    echo "$result" | jq
 }
 
 get_face() {
@@ -179,10 +165,6 @@ get_music_mode() {
     echo "$result"
 }
 
-# ============================
-#     DISPATCHER ARGUMENTS
-# ============================
-
 if [[ $# -eq 0 ]]; then
     get_all_info
     exit 0
@@ -197,6 +179,9 @@ case $1 in
         ;;
     set_luminosity)
         set_luminosity "$2" "$3"
+        ;;
+    set_nightluminosity)
+        set_nightluminosity "$2" "$3"
         ;;
     set_volume)
         set_volume "$2" "$3"

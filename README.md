@@ -34,7 +34,7 @@ Affiche les informations du compte UrbanHello.
 Affiche toutes les infos du réveil.
 
 ### `get_temp REMI_ID`
-Retourne la température du REMI.
+Retourne la température du REMI. (multiplier la valeur par 0.128 et l'arrondir au degres pour obtenir la température en °C. Sans décimale donc)
 
 ---
 

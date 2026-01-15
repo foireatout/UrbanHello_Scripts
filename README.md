@@ -51,6 +51,15 @@ L’API reçoit : `musicPath = "pause:0"`
 ### `set_volume REMI_ID volume`
 Définit le volume entre **0 et 100**.
 
+### `music_path REMI_ID`
+Retourne le fichier en cours de lecture
+
+### `music_mode REMI_ID`
+Retourne le mode d'écoute de la playlist actuel **(0= normal, 1=boucle sur la chanson, 2=boucle la playlist)**
+
+### `list_music REMI_ID`
+Liste les musiques disponibles sur le REMI (nom et chemin).
+
 ---
 
 ## Lumière
@@ -76,7 +85,22 @@ Retourne un numéro correspondant au visage actuel :
 - 1 = awakeFace  
 - 2 = sleepyFace  
 - 3 = semiAwakeFace  
-- 4 = blankFace  
+- 4 = blankFace
+
+---
+
+## Evénements, alarmes/réveils
+
+### `list_events REMI_ID`
+Liste tous les événements (alarms, routines) configurés sur le REMI.
+
+### `set_alarm_enabled EVENT_ID enabled`
+Active ou désactive une alarme spécifique.
+Exemple : set_alarm_enabled abc123 1 pour activer une alarme.
+
+### `update_event EVENT_ID '{"key": "value"}'`
+Met à jour un événement existant (ex : changer l'heure ou l'état).
+Exemple : update_event abc123 '{"enabled": true, "time": "07:30"}'
 
 ---
 

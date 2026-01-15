@@ -6,6 +6,7 @@ PASSWORD="ACCOUNT_PASSWORD"
 TOKEN_FILE="/var/www/html/plugins/script/data/urbanhello/.urbanhello_token"
 USER_OBJECT_ID_FILE="/var/www/html/plugins/script/data/urbanhello/.urbanhello_user_object_id"
 
+
 # ===== FONCTIONS CORE =====
 login() {
     echo "Tentative de connexion à UrbanHello..."
@@ -165,6 +166,35 @@ get_music_mode() {
     echo "$result"
 }
 
+list_remi_musics() {
+    if [[ ! -f "$TOKEN_FILE" ]]; then login; fi
+    token=$(cat "$TOKEN_FILE")
+    result=$(python3 /var/www/html/plugins/script/data/urbanhello/urbanhello_api.py list_music "$token" "$1")
+    echo "$result" | jq .
+}
+
+list_events() {
+    if [[ ! -f "$TOKEN_FILE" ]]; then login; fi
+    token=$(cat "$TOKEN_FILE")
+    result=$(python3 /var/www/html/plugins/script/data/urbanhello/urbanhello_api.py list_events "$token" "$1")
+    echo "$result" | jq .
+}
+
+update_event() {
+    if [[ ! -f "$TOKEN_FILE" ]]; then login; fi
+    token=$(cat "$TOKEN_FILE")
+    result=$(python3 /var/www/html/plugins/script/data/urbanhello/urbanhello_api.py update_event "$token" "$1" "$2")
+    echo "$result" | jq
+}
+
+set_alarm_enabled() {
+    if [[ ! -f "$TOKEN_FILE" ]]; then login; fi
+    token=$(cat "$TOKEN_FILE")
+    result=$(python3 /var/www/html/plugins/script/data/urbanhello/urbanhello_api.py set_alarm_enabled "$token" "$1" "$2")
+    echo "$result" | jq
+}
+
+
 if [[ $# -eq 0 ]]; then
     get_all_info
     exit 0
@@ -222,6 +252,18 @@ case $1 in
         ;;
     music_mode)
         get_music_mode "$2"
+        ;;
+    list_music)
+        list_remi_musics "$2"
+        ;;
+    list_events)
+        list_events "$2"
+        ;;
+    update_event)
+        update_event "$2" "$3"
+        ;;
+    set_alarm_enabled)
+        set_alarm_enabled "$2" "$3"
         ;;
     *)
         echo "Usage: $0 [...]"

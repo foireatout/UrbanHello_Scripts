@@ -20,6 +20,9 @@ def login(username, password):
     response.raise_for_status()
     return response.json()
 
+
+# === Fonctions GET ===
+
 def get_user_info(session_token, user_object_id, attribute=None):
     url = f"{API_BASE_URL}/users/{user_object_id}"
     headers = {
@@ -47,6 +50,105 @@ def get_remi_info(session_token, remi_object_id, attribute=None):
     if attribute:
         return remi_info.get(attribute, f"Attribute '{attribute}' not found")
     return remi_info
+
+def get_music_path(session_token, remi_object_id):
+    return get_remi_info(session_token, remi_object_id, "musicPath")
+
+def get_music_mode(session_token, remi_object_id):
+    return get_remi_info(session_token, remi_object_id, "musicMode")
+
+def get_temperature(session_token, remi_object_id):
+    remi_info = get_remi_info(session_token, remi_object_id, "temp")
+    return remi_info
+
+def list_remi_musics(session_token, remi_object_id):
+    url = f"{API_BASE_URL}/classes/Music"
+    headers = {
+        "X-Parse-Application-Id": PARSE_APP_ID,
+        "X-Parse-Session-Token": session_token,
+        "Content-Type": "application/json"
+    }
+
+    where = {
+        "REMI": {
+            "__type": "Pointer",
+            "className": "Remi",
+            "objectId": remi_object_id
+        }
+    }
+
+    response = requests.get(url, headers=headers, params={"where": json.dumps(where)}, timeout=10)
+    response.raise_for_status()
+    data = response.json()
+
+    results = []
+    for music in data.get("results", []):
+        if "name" in music:
+            results.append({
+                "name": music["name"],
+                "path": music.get("path", "")
+            })
+
+    return sorted(results, key=lambda x: x["name"])
+
+def list_events(session_token, remi_object_id):
+    url = f"{API_BASE_URL}/classes/Event"
+    headers = {
+        "X-Parse-Application-Id": PARSE_APP_ID,
+        "X-Parse-Session-Token": session_token,
+        "Content-Type": "application/json"
+    }
+
+    where = {
+        "remi": {
+            "__type": "Pointer",
+            "className": "Remi",
+            "objectId": remi_object_id
+        }
+    }
+
+    response = requests.get(url, headers=headers, params={"where": json.dumps(where)}, timeout=10)
+    response.raise_for_status()
+    return response.json().get("results", [])
+
+FACE_MAP = {
+    "sleepyFace": "rnAltoFwYC",
+    "awakeFace": "fIjF0yWRxX",
+    "blankFace": "GDaZOVdRqj",
+    "semiAwakeFace": "9faiiPGBVv"
+}
+
+FACE_MAP_INV = {v: k for k, v in FACE_MAP.items()}
+
+def get_face_name_from_id(face_object_id):
+    return FACE_MAP_INV.get(face_object_id, "UnknownFace")
+
+def get_current_face(session_token, remi_object_id):
+    remi_info = get_remi_info(session_token, remi_object_id)
+    face = remi_info.get("face", None)
+
+    if not face:
+        return "NoFace"
+
+    if isinstance(face, dict) and face.get("__type") == "Pointer" and "objectId" in face:
+        fid = face.get("objectId")
+        return get_face_name_from_id(fid)
+
+    if isinstance(face, dict):
+        expression = face.get("expression")
+        if expression:
+            if expression in FACE_MAP_INV:
+                return FACE_MAP_INV[expression]
+            if expression in FACE_MAP:
+                return expression
+        if "objectId" in face:
+            fid = face.get("objectId")
+            return get_face_name_from_id(fid)
+
+    return "UnknownFace"
+
+
+# === Fonctions SET ===
 
 def set_remi_luminosity(session_token, remi_object_id, level):
     url = f"{API_BASE_URL}/classes/Remi/{remi_object_id}"
@@ -88,45 +190,6 @@ def set_face_expression(session_token, remi_object_id, expression):
     response.raise_for_status()
     return response.json()
 
-def get_temperature(session_token, remi_object_id):
-    remi_info = get_remi_info(session_token, remi_object_id, "temp")
-    return remi_info
-
-FACE_MAP = {
-    "sleepyFace": "rnAltoFwYC",
-    "awakeFace": "fIjF0yWRxX",
-    "blankFace": "GDaZOVdRqj",
-    "semiAwakeFace": "9faiiPGBVv"
-}
-
-FACE_MAP_INV = {v: k for k, v in FACE_MAP.items()}
-
-def get_face_name_from_id(face_object_id):
-    return FACE_MAP_INV.get(face_object_id, "UnknownFace")
-
-def get_current_face(session_token, remi_object_id):
-    remi_info = get_remi_info(session_token, remi_object_id)
-    face = remi_info.get("face", None)
-
-    if not face:
-        return "NoFace"
-
-    if isinstance(face, dict) and face.get("__type") == "Pointer" and "objectId" in face:
-        fid = face.get("objectId")
-        return get_face_name_from_id(fid)
-
-    if isinstance(face, dict):
-        expression = face.get("expression")
-        if expression:
-            if expression in FACE_MAP_INV:
-                return FACE_MAP_INV[expression]
-            if expression in FACE_MAP:
-                return expression
-        if "objectId" in face:
-            fid = face.get("objectId")
-            return get_face_name_from_id(fid)
-
-    return "UnknownFace"
 
 def set_face_by_name(session_token, remi_object_id, face_name):
     if face_name not in FACE_MAP:
@@ -186,13 +249,33 @@ def stop_music(session_token, remi_object_id):
     response.raise_for_status()
     return response.json()
 
-def get_music_path(session_token, remi_object_id):
-    return get_remi_info(session_token, remi_object_id, "musicPath")
+def update_event(session_token, event_id, payload_dict):
+    url = f"{API_BASE_URL}/classes/Event/{event_id}"
+    headers = {
+        "X-Parse-Application-Id": PARSE_APP_ID,
+        "Content-Type": "application/json",
+        "X-Parse-Session-Token": session_token
+    }
+    response = requests.put(url, headers=headers, json=payload_dict, timeout=10)
+    response.raise_for_status()
+    return response.json()
 
-def get_music_mode(session_token, remi_object_id):
-    return get_remi_info(session_token, remi_object_id, "musicMode")
+def set_alarm_enabled(session_token, alarm_id, enabled):
+    url = f"{API_BASE_URL}/classes/Event/{alarm_id}"
+    headers = {
+        "X-Parse-Application-Id": PARSE_APP_ID,
+        "X-Parse-Session-Token": session_token,
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "enabled": bool(int(enabled))
+    }
 
-#  DISPATCHER ARGUMENTS
+    response = requests.put(url, headers=headers, json=payload, timeout=10)
+    response.raise_for_status()
+    return response.json()
+
+# ===  DISPATCHER ARGUMENTS ===
 
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "login":
@@ -247,7 +330,7 @@ if __name__ == "__main__":
         session_token = sys.argv[2]
         remi_object_id = sys.argv[3]
         temp = get_temperature(session_token, remi_object_id)
-        print(f"Température: {temp}")
+        print(json.dumps(temp))
 
     elif len(sys.argv) > 1 and sys.argv[1] == "get_face":
         session_token = sys.argv[2]
@@ -283,6 +366,26 @@ if __name__ == "__main__":
         remi_id = sys.argv[3]
         print(get_music_mode(session_token, remi_id))
 
+    elif sys.argv[1] == "list_music":
+        session_token = sys.argv[2]
+        remi_id = sys.argv[3]
+        print(json.dumps(list_remi_musics(session_token, remi_id)))
+
+    elif sys.argv[1] == "list_events":
+        session_token = sys.argv[2]
+        remi_id = sys.argv[3]
+        print(json.dumps(list_events(session_token, remi_id)))
+
+    elif sys.argv[1] == "set_alarm_enabled":
+        session_token = sys.argv[2]
+        remi_id = sys.argv[3]
+        print(json.dumps(set_alarm_enabled(session_token, remi_id, sys.argv[4])))
+
+    elif sys.argv[1] == "update_event":
+        session_token = sys.argv[2]
+        remi_id = sys.argv[3]
+        payload = json.loads(sys.argv[4])
+        print(json.dumps(update_event(session_token, remi_id, payload)))
+
     else:
         print("Usage: urbanhello_api.py [...]")
-
